@@ -17,6 +17,7 @@ const (
 	literal_beg
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
+	IDENT
 	INT    // 12345
 	FLOAT  // 123.45
 	IMAG   // 123.45i
@@ -26,10 +27,11 @@ const (
 
 	operator_beg
 
-	ADD
-	SUB
-	MUL
-	DIV
+	ADD // +
+	SUB // -
+	MUL // *
+	DIV // /
+	REM // %
 
 	AND // &
 	OR  // |
@@ -66,7 +68,6 @@ const (
 	LEQ // <=
 	GEQ // >=
 
-	// Delimiters
 	LPAREN // (
 	LBRACK // [
 	LBRACE // {
@@ -78,6 +79,8 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
+
+	operator_end
 
 	keyword_beg
 	// Keywords
@@ -95,17 +98,18 @@ const (
 	IMPORT
 
 	INTERFACE
-	PACKAGE
+	EXPORT
 	RETURN
 
 	STRUCT
 	SWITCH
 	VAR
+	LET
 
 	PUBLIC
 	PRIVATE
 
-	IMPLEMETAION
+	IMPLEMENTATION
 	keyword_end
 )
 
@@ -114,11 +118,18 @@ var tokens = [...]string{
 	EOF:      "EOF",
 	COMMENTS: "COMMENTS",
 
+	IDENT:  "IDENT",
 	INT:    "INT",
 	FLOAT:  "FLOAT",
 	IMAG:   "IMAG",
 	CHAR:   "CHAR",
 	STRING: "STRING",
+
+	ADD: "+",
+	SUB: "-",
+	MUL: "*",
+	DIV: "/",
+	REM: "%",
 
 	AND: "&",
 	OR:  "|",
@@ -177,12 +188,74 @@ var tokens = [...]string{
 	INTERFACE: "interface",
 	RETURN:    "return",
 
-	STRUCT:       "struct",
-	IMPLEMETAION: "impl",
+	STRUCT:         "struct",
+	IMPLEMENTATION: "impl",
+	EXPORT:         "export",
 
 	SWITCH: "switch",
 	VAR:    "var",
+	LET:    "let",
 
 	PUBLIC:  "public",
 	PRIVATE: "private",
+}
+
+var keywords map[string]TokenType
+
+func init() {
+	keywords = make(map[string]TokenType, keyword_end-(keyword_beg+1))
+	for i := keyword_beg + 1; i < keyword_end; i++ {
+		keywords[tokens[i]] = TokenType(i)
+	}
+
+}
+
+// Return for true if tokens is a keyword
+func isKeyword(name string) bool {
+	_, ok := keywords[name]
+	return ok
+}
+
+// Return for tokens for corresponding literal
+func (tok TokenType) isLiteral() bool { return literal_beg < tok && tok < literal_end }
+
+// Return  true if for  operator tokens
+func (tok TokenType) isOperator() bool { return operator_beg < tok && tok < operator_end }
+
+// Lookup tokens by there strings
+func Lookup(ident string) TokenType {
+	if tok, is_keyword := keywords[ident]; is_keyword {
+		return tok
+	}
+	return IDENT
+}
+
+// A set of constants for precedence-based expression parsing.
+// Non-operators have lowest precedence, followed by operators
+// starting with precedence 1 up to unary operators. The highest
+// precedence serves as "catch-all" precedence for selector,
+// indexing, and other operator and delimiter tokens.
+const (
+	LowestPrec  = 0 // non-operators
+	UnaryPrec   = 6
+	HighestPrec = 7
+)
+
+// Precedence returns the operator precedence of the binary
+// operator op. If op is not a binary operator, the result
+// is LowestPrecedence.
+func (op TokenType) Precedence() int {
+	switch op {
+	case LOR:
+		return 1
+	case LAND:
+		return 2
+	case EQL, NEQ, LSS, LEQ, GTR, GEQ:
+		return 3
+	case ADD, SUB, OR, XOR:
+		return 4
+	case MUL, DIV, REM, SHL, SHR, AND:
+		return 5
+	}
+	return LowestPrec
 }
