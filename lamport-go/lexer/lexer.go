@@ -32,12 +32,20 @@ func newToken(tokenType token.TokenType, ch string) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }
 
+func isDigit(ch byte) bool {
+	return '0' <= ch && ch <= '9'
+}
+
+func isLetter(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+}
+
 func (l *Lexer) NextToken() token.Token {
 
 	var tok token.Token
-
+   
 	switch l.ch {
-	case "=":
+	case :
 		tok = newToken(token.ASSIGN, l.ch)
 	case ";":
 		tok = newToken(token.SEMICOLON, l.ch)
@@ -49,6 +57,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.COMMA, l.ch)
 	case "+":
 		tok = newToken(token.ADD, l.ch)
+	case "-":
+		tok = newToken(token.SUB, l.ch)
 	case "{":
 		tok = newToken(token.RBRACE, l.ch)
 	case "}":
