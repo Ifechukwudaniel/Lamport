@@ -1,12 +1,14 @@
 package lexer
 
-import "lamort-go/token"
+import (
+	"lamort-go/token"
+)
 
 type Lexer struct {
 	input        string
 	postion      int
 	readPosition int
-	ch           string
+	ch           byte
 }
 
 func New(input string) *Lexer {
@@ -18,9 +20,9 @@ func New(input string) *Lexer {
 func (l *Lexer) readChar() {
 
 	if l.readPosition >= len(l.input) {
-		l.ch = ""
+		l.ch = 0
 	} else {
-		l.ch = string(l.input[l.readPosition])
+		l.ch = l.input[l.readPosition]
 	}
 
 	l.postion = l.readPosition
@@ -28,7 +30,19 @@ func (l *Lexer) readChar() {
 
 }
 
-func newToken(tokenType token.TokenType, ch string) token.Token {
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
+func (l *Lexer) readIdentifier() {
+
+}
+
+func newToken(tokenType token.TokenType, ch byte) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }
 
@@ -43,29 +57,53 @@ func isLetter(ch byte) bool {
 func (l *Lexer) NextToken() token.Token {
 
 	var tok token.Token
-   
+
 	switch l.ch {
-	case :
-		tok = newToken(token.ASSIGN, l.ch)
-	case ";":
+	case '=':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.EQL, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.NEQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.NOT, l.ch)
+		}
+
+	case ';':
 		tok = newToken(token.SEMICOLON, l.ch)
-	case "(":
+	case '(':
 		tok = newToken(token.LBRACK, l.ch)
-	case ")":
+	case ')':
 		tok = newToken(token.RBRACK, l.ch)
-	case ",":
+	case ',':
 		tok = newToken(token.COMMA, l.ch)
-	case "+":
+	case '+':
 		tok = newToken(token.ADD, l.ch)
-	case "-":
+	case '-':
 		tok = newToken(token.SUB, l.ch)
-	case "{":
+	case '{':
 		tok = newToken(token.RBRACE, l.ch)
-	case "}":
+	case '}':
 		tok = newToken(token.LBRACE, l.ch)
-	case "":
+	case 0:
 		tok.Literal = ""
 		tok.Type = token.EOF
+	default:
+		if isLetter(byte(l.ch)) {
+			// tok.Literal = l.
+
+		} else if isDigit(l.ch) {
+
+		} else {
+			// tok = newToken(token.ILLEGER, l.ch)
+		}
 	}
 
 	l.readChar()
